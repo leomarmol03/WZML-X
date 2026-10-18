@@ -1,6 +1,6 @@
 # WZML-X en Google Colab
 
-El notebook [`WZML-X-Colab.ipynb`](WZML-X-Colab.ipynb) usa **udocker 1.3.17** para ejecutar sin Docker daemon ni privilegios reales la imagen base `mysterysd/wzmlx:wzadv` que usa el `Dockerfile` del proyecto. Monta el checkout en `/usr/src/app`, instala allí `requirements.txt` en `/wzvenv` y ejecuta el bot con ese Python, sin `start.sh` ni `update.py`. La imagen está pensada para aportar los binarios y el binding nativo de MEGA que faltan en un runtime Python de Colab.
+El notebook [`WZML-X-Colab.ipynb`](WZML-X-Colab.ipynb) usa **udocker 1.3.17** con el ejecutable PRoot instalado desde los paquetes del sistema de Colab. Así ejecuta sin Docker daemon ni privilegios reales la imagen base `mysterysd/wzmlx:wzadv` que usa el `Dockerfile` del proyecto, sin depender de `udocker install` ni de su descarga auxiliar desde mirrors externos. Monta el checkout en `/usr/src/app`, instala allí `requirements.txt` en `/wzvenv` y ejecuta el bot con ese Python, sin `start.sh` ni `update.py`. La imagen está pensada para aportar los binarios y el binding nativo de MEGA que faltan en un runtime Python de Colab.
 
 Se eligió udocker/PRoot en modo P2 en lugar de FREEROOT porque permite reutilizar directamente la imagen base del despliegue y su entorno, sin añadir otra capa de runtime. PRoot no proporciona aislamiento fuerte, así que ejecuta solo la imagen de confianza del proyecto; esto no convierte Colab en un host de producción.
 
@@ -8,7 +8,7 @@ Se eligió udocker/PRoot en modo P2 en lugar de FREEROOT porque permite reutiliz
 
 1. Abre el notebook en Google Colab y habilita **Internet access** en el runtime.
 2. Ejecuta las celdas en orden. La configuración actual clona la rama `arena/d3f87987-wzml-x` de `leomarmol03/WZML-X`; puedes cambiar `REPO_URL` y `BRANCH` en la primera celda si usas un fork o una rama ya integrada.
-3. La primera instalación usa `pip` para udocker, descarga sus herramientas PRoot y hace pull de `mysterysd/wzmlx:wzadv` desde Docker Hub. El contenedor y la imagen ocupan varios GB y solo viven en el disco temporal del runtime.
+3. La primera instalación usa `apt` para PRoot si falta, instala udocker con `pip` y hace pull de `mysterysd/wzmlx:wzadv` desde Docker Hub. Se configura udocker para usar el `proot` del sistema y evitar que `udocker install` descargue su bundle auxiliar desde mirrors externos. El contenedor y la imagen ocupan varios GB y solo viven en el disco temporal del runtime.
 4. Introduce `BOT_TOKEN`, `OWNER_ID`, `TELEGRAM_API` y `TELEGRAM_HASH` cuando se soliciten. También puedes guardarlos en **Secrets** de Colab con esos nombres. `DATABASE_URL` es opcional, pero se recomienda MongoDB Atlas para conservar configuraciones entre runtimes.
 5. Mantén el runtime activo mientras uses el bot. La celda del túnel imprime el enlace público de la UI; el bot lee esa URL desde un archivo montado para habilitar el selector de archivos.
 
