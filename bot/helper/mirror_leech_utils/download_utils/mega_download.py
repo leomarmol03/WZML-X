@@ -4,7 +4,12 @@ from contextlib import suppress
 from secrets import token_hex
 
 from aiofiles.os import makedirs
-from mega import MegaApi, MegaCancelToken
+from ...ext_utils.mega_sdk import (
+    MEGA_DISABLED_MESSAGE,
+    MEGA_SDK_AVAILABLE,
+    MegaApi,
+    MegaCancelToken,
+)
 
 from .... import LOGGER, task_dict, task_dict_lock, user_data
 from ....core.config_manager import Config
@@ -104,10 +109,8 @@ async def _release_link(link: str):
 
 
 async def add_mega_download(listener, path):
-    if Config.DISABLE_MEGA:
-        await listener.on_download_error(
-            "Mega Link downloads are currently disabled by the Bot Owner."
-        )
+    if Config.DISABLE_MEGA or not MEGA_SDK_AVAILABLE:
+        await listener.on_download_error(MEGA_DISABLED_MESSAGE)
         return
 
     user_dict = user_data.get(listener.user_id, {})

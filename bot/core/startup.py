@@ -8,6 +8,7 @@ from aioshutil import rmtree
 
 
 from .. import (
+    JDOWNLOADER_DIR,
     LOGGER,
     bot_loop,
     aria2_options,
@@ -382,9 +383,10 @@ async def load_configurations():
     await (await create_subprocess_shell(cmd)).wait()
 
     if await aiopath.exists("cfg.zip"):
-        if await aiopath.exists("/JDownloader/cfg"):
-            await rmtree("/JDownloader/cfg", ignore_errors=True)
-        await cmd_exec(["7z", "x", "cfg.zip", "-o/JDownloader"])
+        jd_config_dir = f"{JDOWNLOADER_DIR}/cfg"
+        if await aiopath.exists(jd_config_dir):
+            await rmtree(jd_config_dir, ignore_errors=True)
+        await cmd_exec(["7z", "x", "cfg.zip", f"-o{JDOWNLOADER_DIR}"])
 
     if await aiopath.exists("accounts.zip"):
         if await aiopath.exists("accounts"):

@@ -44,6 +44,7 @@
    - [What It Covers](#what-it-covers)
    - [How It Runs](#how-it-runs)
    - [Deployment](#deployment)
+   - [Google Colab](#google-colab)
    - [Configuration](#configuration)
    - [Project Layout](#project-layout)
    - [Documentation](#documentation)
@@ -58,7 +59,8 @@
 |---|---|
 | Runtime | Python Telegram bot + web UI |
 | Deployment | Docker & Docker Compose (buildx) |
-| Required config | `BOT_TOKEN`, `TELEGRAM_API`, `TELEGRAM_HASH`, `OWNER_ID`, `DATABASE_URL` |
+| Required config | `BOT_TOKEN`, `TELEGRAM_API`, `TELEGRAM_HASH`, `OWNER_ID` |
+| Persistence | Optional `DATABASE_URL` (MongoDB Atlas recommended) |
 | License | [LICENSE](LICENSE) |
 
 ## Why Use It
@@ -173,6 +175,23 @@ Deploy with Docker and provide the required configuration values. The container 
    ```
 </details>
 
+## Google Colab
+
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leomarmol03/WZML-X/blob/wzv3/colab/WZML-X-Colab.ipynb)
+
+> [!WARNING]
+> Colab runtimes are temporary and can disconnect without notice. They are not suitable for a 24/7 or production bot. Use a VPS or Docker deployment for continuous availability.
+
+Open the ready-to-run [WZML-X Colab notebook](colab/WZML-X-Colab.ipynb). It installs the Linux/Python dependencies normally supplied by the Docker image, creates a private runtime-only `config.py`, starts the bot directly with `python -m bot`, and can create a temporary Cloudflare Quick Tunnel for the file-selector UI.
+
+The notebook defaults to enabling aria2/qBittorrent, disabling JDownloader/SABnzbd, and limiting the bot to two concurrent tasks to stay within Colab's resource limits. It prompts for Telegram credentials without echoing them; `DATABASE_URL` is optional but recommended if settings should persist between sessions. Downloads and other local files are temporary, and the bot clears its download directory on startup. Do not point `WZML_DOWNLOAD_DIR` at persistent storage unless that cleanup behavior is acceptable.
+
+The MEGA integration needs a compatible native C++ SDK Python binding provided by the Docker base image, not by `requirements.txt` or the similarly named PyPI clients. If that binding is missing or incompatible, the bot now starts with MEGA disabled and reports this clearly when a MEGA task is attempted; other download/upload paths remain available. Colab's MEGA support has not been verified.
+
+**Do not run `start.sh` in Colab.** That container-oriented entrypoint invokes `update.py`, which may update or clean deployment files and expects the Docker runtime tooling. The notebook bypasses it. The Cloudflare URL is public and expires with the runtime; stop the tunnel when finished and do not expose private credentials in notebook cells or outputs.
+
+For setup details and troubleshooting, see [`colab/README.md`](colab/README.md).
+
 <details>
    <summary>Legacy Workflow Guide</summary>
 
@@ -191,9 +210,8 @@ Start with the required values:
 - `TELEGRAM_API`
 - `TELEGRAM_HASH`
 - `OWNER_ID`
-- `DATABASE_URL`
 
-Then tune the optional behavior from `config_sample.py`.
+`DATABASE_URL` is optional for startup, but a MongoDB Atlas connection is recommended to persist bot settings and user data across restarts. Then tune the optional behavior from `config_sample.py`.
 
 <details>
    <summary>Important user-facing settings</summary>
@@ -255,8 +273,9 @@ Then tune the optional behavior from `config_sample.py`.
 | `web/` | FastAPI app, templates, and the file selector UI |
 | `gen_scripts/` | Setup helpers for sessions, tokens, and drive configuration |
 | `plugins/` | Optional bot plugins |
-| `qBittorrent/` | Default qBittorrent configuration |
-| `sabnzbd/` | Default SABnzbd configuration |
+| `colab/` | Google Colab notebook and setup notes |
+| `configs/qbittorrent/` | Default qBittorrent configuration |
+| `configs/sabnzbd/` | Default SABnzbd configuration |
 
 ## Documentation
 

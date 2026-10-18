@@ -33,6 +33,7 @@ from ..helper.ext_utils.links_utils import (
     is_telegram_link,
     is_url,
 )
+from ..helper.ext_utils.mega_sdk import MEGA_DISABLED_MESSAGE
 from ..helper.ext_utils.task_manager import pre_task_check
 from ..helper.listeners.task_listener import TaskListener
 from ..helper.mirror_leech_utils.download_utils.alldebrid_resolver import (
@@ -424,6 +425,15 @@ class Mirror(TaskListener):
             await self.before_start()
         except Exception as e:
             await send_message(self.message, e)
+            await self.remove_from_same_dir()
+            await delete_links(self.message)
+            return
+
+        if Config.DISABLE_MEGA and (
+            (isinstance(self.link, str) and is_mega_link(self.link))
+            or self.up_dest in ("mega", "mega:")
+        ):
+            await send_message(self.message, MEGA_DISABLED_MESSAGE)
             await self.remove_from_same_dir()
             await delete_links(self.message)
             return

@@ -31,6 +31,7 @@ from pyrogram.filters import create
 from pyrogram.handlers import MessageHandler
 
 from .. import (
+    JDOWNLOADER_DIR,
     LOGGER,
     aria2_options,
     bot_loop,
@@ -59,6 +60,7 @@ from ..helper.ext_utils.bot_utils import (
 )
 from ..core.config_manager import Config, DEFAULT_CONFIG
 from ..core.tg_client import TgClient, db_partition_id
+from ..helper.ext_utils.mega_sdk import MEGA_SDK_AVAILABLE
 from ..core.torrent_manager import TorrentManager
 from ..core.startup import update_qb_options, update_nzb_options, update_variables
 from ..helper.ext_utils.db_handler import database
@@ -162,7 +164,7 @@ DEFAULT_DESP = {
     "DISABLE_MULTI": "Disable multi-part splits. Default: False.",
     "DISABLE_SEED": "Disable seeding after torrent download. Default: False.",
     "DISABLE_FF_MODE": "Disable FFmpeg processing mode. Default: False.",
-    "DISABLE_MEGA": "Disable Mega Processor for bot. Default: False.",
+    "DISABLE_MEGA": "Disable Mega Processor for bot. MEGA is automatically disabled when the compatible native SDK binding is unavailable. Default: False.",
     "DISABLE_PLUGINS": "Disable the plugin system. Unloads every plugin and stops loading them at boot. Default: False.",
     "DISABLE_JD": "Disable JDownloader downloads. Saves ~256-500MB RAM. Default: False.",
     "DISABLE_NZB": "Disable SABnzbd/Usenet downloads. Saves ~100-200MB RAM. Default: False.",
@@ -962,6 +964,12 @@ async def toggle_bool_var(_, query, pre_message, key, value):
 async def toggle_onoff_var(_, query, pre_message, key, value):
     handler_dict[query.message.chat.id] = False
     bool_value = value == "on"
+    if key == "DISABLE_MEGA" and not bool_value and not MEGA_SDK_AVAILABLE:
+        await query.answer(
+            "Cannot enable MEGA: the compatible native SDK binding is not installed.",
+            show_alert=True,
+        )
+        return
     Config.set(key, bool_value)
     await database.update_config({key: bool_value})
     await _handle_service_toggle(key, bool_value)
@@ -1213,7 +1221,7 @@ async def sync_jdownloader():
         await jdownloader.device.system.exit_jd()
     if await aiopath.exists("cfg.zip"):
         await remove("cfg.zip")
-    await cmd_exec(["7z", "a", "cfg.zip", "/JDownloader/cfg"])
+    await cmd_exec(["7z", "a", "cfg.zip", f"{JDOWNLOADER_DIR}/cfg"])
     await database.update_private_file("cfg.zip")
 
 

@@ -7,6 +7,28 @@ except ImportError:
     pass
 
 from asyncio import new_event_loop, set_event_loop
+from os import environ, sep
+from pathlib import Path
+
+APP_DIR = Path(__file__).resolve().parent.parent
+_download_path = (
+    Path(environ.get("WZML_DOWNLOAD_DIR", APP_DIR / "downloads")).expanduser().resolve()
+)
+if _download_path == Path(_download_path.anchor) or _download_path == APP_DIR:
+    raise ValueError("WZML_DOWNLOAD_DIR must point to a dedicated subdirectory")
+if _download_path in APP_DIR.parents:
+    raise ValueError("WZML_DOWNLOAD_DIR cannot contain the application directory")
+DOWNLOAD_DIR = str(_download_path)
+if not DOWNLOAD_DIR.endswith(sep):
+    DOWNLOAD_DIR += sep
+_default_jdownloader_dir = Path("/JDownloader")
+if not _default_jdownloader_dir.exists():
+    _default_jdownloader_dir = APP_DIR / "JDownloader"
+JDOWNLOADER_DIR = str(
+    Path(environ.get("WZML_JDOWNLOADER_DIR", _default_jdownloader_dir))
+    .expanduser()
+    .resolve()
+)
 
 bot_loop = new_event_loop()
 set_event_loop(bot_loop)
@@ -47,7 +69,6 @@ basicConfig(
 LOGGER = getLogger(__name__)
 
 bot_cache = {}
-DOWNLOAD_DIR = "/usr/src/app/downloads/"
 intervals = {"status": {}, "qb": "", "jd": "", "nzb": "", "stopAll": False}
 qb_torrents = {}
 jd_downloads = {}
@@ -108,7 +129,7 @@ def _update_sabnzbd_ini(api_key):
     try:
         with open("configs/sabnzbd/SABnzbd.ini", "r+") as f:
             content = f.read()
-            new = content
+            new = content.replace("/usr/src/app/downloads", DOWNLOAD_DIR.rstrip(sep))
             new = pat_key.sub(f"api_key = {api_key}", new)
             new = pat_pwd.sub(f"password = {api_key}", new)
             if new == content:

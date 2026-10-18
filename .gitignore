@@ -19,6 +19,10 @@ categories.txt
 cookies.txt
 terabox.txt
 downloads/*
+JDownloader/
+.colab_tunnel_url
+colab_bot.log
+colab_tunnel.log
 .github/instructions/*
 .github/skills/*
 .github/agents/*

@@ -12,7 +12,7 @@ from pyrogram.types import LinkPreviewOptions
 
 from bot.version import get_version
 
-from .. import LOGGER, intervals, sabnzbd_client, scheduler
+from .. import DOWNLOAD_DIR, LOGGER, intervals, sabnzbd_client, scheduler
 from ..core.config_manager import Config, BinConfig
 from ..core.jdownloader_booter import jdownloader
 from ..core.tg_client import TgClient
@@ -402,6 +402,6 @@ async def _runtime_reload():
 
 async def _background_cleanup():
     try:
-        await cmd_exec(["rm", "-rf", "/usr/src/app/downloads/"])
+        await cmd_exec(["rm", "-rf", DOWNLOAD_DIR])
     except Exception:
         pass

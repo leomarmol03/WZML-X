@@ -1,9 +1,35 @@
 from ast import literal_eval
 from importlib import import_module
+from logging import getLogger
 from os import getenv
-from wz_bin import bin_name
+
+try:
+    from wz_bin import bin_name
+except ModuleNotFoundError as exc:
+    if exc.name != "wz_bin":
+        raise
+    # The Docker base image ships wz_bin; Colab and other bare Linux runtimes
+    # use the standard executable names installed by their system package manager.
+    _SYSTEM_BINARIES = (
+        "aria2c",
+        "qbittorrent-nox",
+        "ffmpeg",
+        "rclone",
+        "sabnzbdplus",
+    )
+
+    def bin_name(index):
+        try:
+            return _SYSTEM_BINARIES[index]
+        except IndexError as exc:
+            raise ValueError(f"Unknown WZML binary index: {index}") from exc
+
 
 from ..helper.ext_utils.deprecations import Deprecations
+from ..helper.ext_utils.mega_sdk import MEGA_SDK_AVAILABLE, MEGA_SDK_IMPORT_ERROR
+
+_LOGGER = getLogger(__name__)
+_MEGA_WARNING_LOGGED = False
 
 
 class Config:
@@ -33,7 +59,7 @@ class Config:
     DISABLE_MULTI = False
     DISABLE_SEED = False
     DISABLE_FF_MODE = False
-    DISABLE_MEGA = False
+    DISABLE_MEGA = not MEGA_SDK_AVAILABLE
     DISABLE_PLUGINS = False
     DISABLE_JD = True
     DISABLE_NZB = True
@@ -191,6 +217,8 @@ class Config:
     def set(cls, key, value):
         if hasattr(cls, key):
             value = cls._convert_env_type(key, value)
+            if key == "DISABLE_MEGA" and not value and not MEGA_SDK_AVAILABLE:
+                value = True
             setattr(cls, key, value)
         else:
             raise KeyError(f"{key} is not a valid configuration key.")
@@ -204,9 +232,34 @@ class Config:
         }
 
     @classmethod
+    def _enforce_mega_availability(cls, warn=False):
+        global _MEGA_WARNING_LOGGED
+        if MEGA_SDK_AVAILABLE:
+            return
+        cls.DISABLE_MEGA = True
+        if warn and not _MEGA_WARNING_LOGGED:
+            _LOGGER.warning(
+                "MEGA support is disabled: the compatible native SDK binding "
+                "is unavailable (%s)",
+                MEGA_SDK_IMPORT_ERROR,
+            )
+            _MEGA_WARNING_LOGGED = True
+
+    @classmethod
     def load(cls):
         cls.load_config()
         cls.load_env()
+        cls._validate_required()
+        cls._enforce_mega_availability(warn=True)
+
+    @classmethod
+    def _validate_required(cls):
+        for key in ["BOT_TOKEN", "OWNER_ID", "TELEGRAM_API", "TELEGRAM_HASH"]:
+            value = getattr(cls, key)
+            if isinstance(value, str):
+                value = value.strip()
+            if not value:
+                raise ValueError(f"{key} variable is missing!")
 
     @classmethod
     def load_config(cls):
@@ -241,12 +294,6 @@ class Config:
         Deprecations.adopt_owner(
             cls, "LEECH_DUMP_CHAT", getattr(settings, "LEECH_DUMP_CHAT", None)
         )
-        for key in ["BOT_TOKEN", "OWNER_ID", "TELEGRAM_API", "TELEGRAM_HASH"]:
-            value = getattr(cls, key)
-            if isinstance(value, str):
-                value = value.strip()
-            if not value:
-                raise ValueError(f"{key} variable is missing!")
 
     @classmethod
     def load_env(cls):
@@ -342,12 +389,8 @@ class Config:
             config_dict.get("LEECH_DUMP_CHAT"),
             cls._convert_env_type,
         )
-        for key in ["BOT_TOKEN", "OWNER_ID", "TELEGRAM_API", "TELEGRAM_HASH"]:
-            value = getattr(cls, key)
-            if isinstance(value, str):
-                value = value.strip()
-            if not value:
-                raise ValueError(f"{key} variable is missing!")
+        cls._validate_required()
+        cls._enforce_mega_availability()
 
 
 DEFAULT_CONFIG = Config.get_all()

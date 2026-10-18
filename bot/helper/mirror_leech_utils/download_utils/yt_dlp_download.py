@@ -3,6 +3,7 @@ from os import path as ospath, listdir
 from re import search as re_search
 from contextlib import suppress
 from secrets import token_hex
+from shutil import which
 from yt_dlp import YoutubeDL, DownloadError
 
 from .... import task_dict_lock, task_dict
@@ -78,7 +79,7 @@ class YoutubeDLHelper:
             "overwrites": True,
             "writethumbnail": True,
             "trim_file_name": 220,
-            "ffmpeg_location": f"/bin/{BinConfig.FFMPEG_NAME}",
+            "ffmpeg_location": (which(BinConfig.FFMPEG_NAME) or BinConfig.FFMPEG_NAME),
             "fragment_retries": 10,
             "retries": 10,
             "retry_sleep_functions": {
