@@ -177,16 +177,16 @@ Deploy with Docker and provide the required configuration values. The container 
 
 ## Google Colab
 
-[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leomarmol03/WZML-X/blob/wzv3/colab/WZML-X-Colab.ipynb)
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leomarmol03/WZML-X/blob/arena/d3f87987-wzml-x/colab/WZML-X-Colab.ipynb)
 
 > [!WARNING]
 > Colab runtimes are temporary and can disconnect without notice. They are not suitable for a 24/7 or production bot. Use a VPS or Docker deployment for continuous availability.
 
-Open the ready-to-run [WZML-X Colab notebook](colab/WZML-X-Colab.ipynb). It installs the Linux/Python dependencies normally supplied by the Docker image, creates a private runtime-only `config.py`, starts the bot directly with `python -m bot`, and can create a temporary Cloudflare Quick Tunnel for the file-selector UI.
+Open the ready-to-run [WZML-X Colab notebook](colab/WZML-X-Colab.ipynb). It uses udocker/PRoot to run the same `mysterysd/wzmlx:wzadv` base image as the Dockerfile without a Docker daemon or real root privileges, mounts the source into `/usr/src/app`, installs the project requirements in `/wzvenv`, and starts with `python -m bot` without running the container updater. It can also create a temporary Cloudflare Quick Tunnel for the file-selector UI.
 
-The notebook defaults to enabling aria2/qBittorrent, disabling JDownloader/SABnzbd, and limiting the bot to two concurrent tasks to stay within Colab's resource limits. It prompts for Telegram credentials without echoing them; `DATABASE_URL` is optional but recommended if settings should persist between sessions. Downloads and other local files are temporary, and the bot clears its download directory on startup. Do not point `WZML_DOWNLOAD_DIR` at persistent storage unless that cleanup behavior is acceptable.
+The notebook defaults to enabling aria2/qBittorrent, disabling JDownloader/SABnzbd, and limiting the bot to two concurrent tasks. It prompts for Telegram credentials without echoing them; `DATABASE_URL` is optional but recommended if settings should persist between sessions. The image pull can take time and several GB of Colab storage. Downloads and all container files remain temporary, and the bot clears its download directory on startup.
 
-The MEGA integration needs a compatible native C++ SDK Python binding provided by the Docker base image, not by `requirements.txt` or the similarly named PyPI clients. If that binding is missing or incompatible, the bot now starts with MEGA disabled and reports this clearly when a MEGA task is attempted; other download/upload paths remain available. Colab's MEGA support has not been verified.
+Using the Docker base image should supply the native MEGA SDK binding used in the normal deployment. The notebook checks whether that binding is compatible; if it is missing or fails to load, the bot starts with MEGA disabled and reports the limitation. Colab remains ephemeral and udocker does not provide strong container isolation, so use only the project's trusted image and do not treat this as production hosting.
 
 **Do not run `start.sh` in Colab.** That container-oriented entrypoint invokes `update.py`, which may update or clean deployment files and expects the Docker runtime tooling. The notebook bypasses it. The Cloudflare URL is public and expires with the runtime; stop the tunnel when finished and do not expose private credentials in notebook cells or outputs.
 
