@@ -1,7 +1,13 @@
 from shutil import rmtree as shutil_rmtree
 from tempfile import mkdtemp
 
-from mega import MegaApi, MegaError, MegaListener, MegaRequest
+from .mega_sdk import (
+    MEGA_SDK_AVAILABLE,
+    MegaApi,
+    MegaError,
+    MegaListener,
+    MegaRequest,
+)
 
 from .bot_utils import sync_to_async
 from .status_utils import get_readable_file_size
@@ -164,6 +170,12 @@ class MegaAccountListener(MegaListener):
 def _get_mega_account_info_sync(email: str, password: str) -> str:
     from time import sleep, gmtime, strftime
 
+    if not MEGA_SDK_AVAILABLE:
+        return (
+            "⌬ <b>Mega Account Info</b>\n│\n"
+            "┖ <i>MEGA is unavailable: the compatible native SDK binding "
+            "is not installed in this runtime.</i>"
+        )
     if not email or not password:
         return "⌬ <b>Mega Account Info</b>\n│\n┖ <i>No credentials configured.</i>"
 

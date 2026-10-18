@@ -11,7 +11,7 @@ from concurrent.futures import Future
 from re import match as rematch
 from time import time
 
-from mega import (
+from ..ext_utils.mega_sdk import (
     MegaApi,
     MegaError,
     MegaListener,

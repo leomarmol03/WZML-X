@@ -5,7 +5,7 @@ from secrets import token_hex
 from aiofiles.os import remove
 
 from .. import LOGGER, bot_loop, task_dict, task_dict_lock
-from ..core.config_manager import BinConfig
+from ..core.config_manager import BinConfig, Config
 from ..helper.ext_utils.bot_utils import (
     COMMAND_USAGE,
     arg_parser,
@@ -27,6 +27,7 @@ from ..helper.ext_utils.links_utils import (
     is_rclone_path,
     is_share_link,
 )
+from ..helper.ext_utils.mega_sdk import MEGA_DISABLED_MESSAGE
 from ..helper.ext_utils.task_manager import (
     check_running_tasks,
     pre_task_check,
@@ -182,6 +183,14 @@ class Clone(TaskListener):
             await self.before_start()
         except Exception as e:
             await send_message(self.message, e)
+            await delete_links(self.message)
+            return
+
+        if Config.DISABLE_MEGA and (
+            (isinstance(self.link, str) and is_mega_link(self.link))
+            or self.up_dest in ("mega", "mega:")
+        ):
+            await send_message(self.message, MEGA_DISABLED_MESSAGE)
             await delete_links(self.message)
             return
 

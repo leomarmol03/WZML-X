@@ -7,7 +7,7 @@ from hashlib import sha256
 from inspect import signature
 from time import monotonic
 
-from .. import LOGGER, bot_loop
+from .. import APP_DIR, LOGGER, bot_loop
 from ..helper.ext_utils.exceptions import TgLinkException
 from .config_manager import Config
 
@@ -261,7 +261,7 @@ class TgClient:
         cls.bot = cls.wztgClient(
             f"WZ-Bot{cls.ID}",
             bot_token=Config.BOT_TOKEN,
-            workdir="/usr/src/app",
+            workdir=str(APP_DIR),
         )
         while True:
             try:

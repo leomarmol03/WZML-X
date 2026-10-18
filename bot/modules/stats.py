@@ -24,6 +24,7 @@ from psutil import (
 
 from .. import LOGGER, bot_cache, bot_start_time, bot_loop
 from ..core.config_manager import Config, BinConfig
+from ..helper.ext_utils.mega_sdk import MEGA_SDK_AVAILABLE
 from ..helper.ext_utils.bot_lock import get_system_resources_cached
 from ..helper.ext_utils.bot_utils import (
     cmd_exec,
@@ -179,6 +180,11 @@ async def get_stats(event, key="home"):
     """
     elif key == "stpkgs":
         ver = bot_cache.get("eng_versions", {})
+        mega_version = (
+            f"v{ver.get('mega', 'N/A')}"
+            if MEGA_SDK_AVAILABLE
+            else "Disabled (SDK unavailable)"
+        )
         msg = f"""⌬ <b><i>Packages Statistics :</i></b>
 │
 ┟ <b>python:</b> v{ver.get("python", "N/A")}
@@ -192,7 +198,7 @@ async def get_stats(event, key="home"):
 ┠ <b>Aiohttp:</b> v{ver.get("aiohttp", "N/A")}
 ┠ <b>WzGram:</b> v{ver.get("wzgram", "N/A")}
 ┠ <b>Google API:</b> v{ver.get("gapi", "N/A")}
-┖ <b>MegaSDK:</b> v{ver.get("mega", "N/A")}
+┖ <b>MegaSDK:</b> {mega_version}
 """
     elif key == "tlimits":
         msg = f"""⌬ <b><i>Bot Task Limits :</i></b>
@@ -344,11 +350,19 @@ async def retry_mega_version():
 
 @new_task
 async def get_packages_version():
-    tasks = [get_version_async(command, regex) for command, regex in commands.values()]
-    versions = await gather(*tasks)
-    bot_cache["eng_versions"] = {}
-    for tool, ver in zip(commands.keys(), versions):
-        bot_cache["eng_versions"][tool] = ver
+    active_commands = [
+        (tool, command, regex)
+        for tool, (command, regex) in commands.items()
+        if tool != "mega" or MEGA_SDK_AVAILABLE
+    ]
+    versions = await gather(
+        *(get_version_async(command, regex) for _, command, regex in active_commands)
+    )
+    bot_cache["eng_versions"] = {
+        tool: version for (tool, _, _), version in zip(active_commands, versions)
+    }
+    if not MEGA_SDK_AVAILABLE:
+        bot_cache["eng_versions"]["mega"] = "Disabled (SDK unavailable)"
     if await aiopath.exists(".git"):
         last_commit = await cmd_exec(
             "git log -1 --date=short --pretty=format:'%cd <b>From</b> %cr'", True
@@ -358,9 +372,10 @@ async def get_packages_version():
         last_commit = "No UPSTREAM_REPO"
     bot_cache["commit"] = last_commit
 
-    if bot_cache["eng_versions"]["mega"] in ["Timeout", "N/A"] or bot_cache[
-        "eng_versions"
-    ]["mega"].startswith("Exception"):
+    if MEGA_SDK_AVAILABLE and (
+        bot_cache["eng_versions"]["mega"] in ["Timeout", "N/A"]
+        or bot_cache["eng_versions"]["mega"].startswith("Exception")
+    ):
         bot_loop.create_task(retry_mega_version())
 
     LOGGER.info("Fetched Package Versions!")
