@@ -1,7 +1,7 @@
 # REQUIRED CONFIG
 BOT_TOKEN = "5017446193:AAErqQO4z6OjjeShEOjVM3bOmwbkdIznonA"       # from @BotFather
-OWNER_ID = "969668423"        # your numeric Telegram user id
-TELEGRAM_API = "5591560"    # from https://my.telegram.org
+OWNER_ID = 969668423        # your numeric Telegram user id
+TELEGRAM_API = 5591560    # from https://my.telegram.org
 TELEGRAM_HASH = "019829ed2f9510a1aff56f5b5808d0a7"   # from https://my.telegram.org
 DATABASE_URL = "mongodb+srv://suckmypus:PBjTU2ah4X3yVKtL@cluster0.dlins6c.mongodb.net/wzml?retryWrites=true&w=majority"
 
